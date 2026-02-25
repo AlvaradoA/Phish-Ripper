@@ -35,3 +35,11 @@ override.tf.json
 # Ignore CLI configuration files
 .terraformrc
 terraform.rc
+.terraform.lock.hcl
+
+# Deployment packages
+*.zip
+backend/*.zip
+
+# OS generated files
+.DS_Store

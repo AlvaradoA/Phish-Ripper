@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phish-Ripper | Threat Triage</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">🛡️ Phish-Ripper</div>
+            <p class="subtitle">Automated IOC Aggregation Pipeline</p>
+        </header>
+
+        <div class="card" id="upload-section">
+            <h2>Analyze Suspicious Email</h2>
+            <p class="instruction">Upload the raw email source (.txt or .eml) to scan for malicious IPs.</p>
+            
+            <div class="drop-zone" id="drop-zone">
+                <span class="drop-icon">📂</span>
+                <p>Drag & drop your .txt or .eml file here or <span class="browse-btn">browse</span></p>
+                <input type="file" id="fileInput" accept=".txt, .eml" hidden>
+            </div>
+            
+            <p id="filename" class="file-name"></p>
+            <button id="scanBtn" class="primary-btn" disabled>Initialize Scan</button>
+        </div>
+
+        <div class="card hidden" id="loading-section">
+            <div class="loader"></div>
+            <h3>Analyzing Artifacts...</h3>
+            <p>Querying AbuseIPDB Threat Intelligence...</p>
+        </div>
+
+        <div class="card hidden" id="results-section">
+            <div class="results-header">
+                <h2>Scan Results</h2>
+                <span id="status-badge" class="badge">COMPLETED</span>
+            </div>
+            <div class="terminal-window">
+                <div class="terminal-header">
+                    <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
+                </div>
+                <pre id="results-content" class="code-block"></pre>
+            </div>
+            <button id="resetBtn" class="secondary-btn">Scan Another File</button>
+        </div>
+    </div>
+
+    <script>
+        // UPDATE THIS WITH YOUR TERRAFORM OUTPUT URL
+        const API_URL = "API_URL"; 
+        
+        const fileInput = document.getElementById('fileInput');
+        const dropZone = document.getElementById('drop-zone');
+        const scanBtn = document.getElementById('scanBtn');
+        const fileNameDisplay = document.getElementById('filename');
+        const uploadSection = document.getElementById('upload-section');
+        const loadingSection = document.getElementById('loading-section');
+        const resultsSection = document.getElementById('results-section');
+        const resultsContent = document.getElementById('results-content');
+        const resetBtn = document.getElementById('resetBtn');
+
+        dropZone.addEventListener('click', () => fileInput.click());
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault(); dropZone.classList.remove('drag-over'); handleFile(e.dataTransfer.files[0]);
+        });
+        fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+
+        function handleFile(file) {
+            if (file && (file.type === "text/plain" || file.type === "message/rfc822" || file.name.endsWith(".txt") || file.name.endsWith(".eml"))) {
+                fileNameDisplay.textContent = `Selected: ${file.name}`;
+                scanBtn.disabled = false;
+                const reader = new FileReader();
+                reader.onload = (event) => window.emailContent = event.target.result;
+                reader.readAsText(file);
+            } else { 
+                alert("Please upload a valid .txt or .eml file"); 
+            }
+        }
+
+        scanBtn.addEventListener('click', async () => {
+            if (!window.emailContent) return;
+            uploadSection.classList.add('hidden');
+            loadingSection.classList.remove('hidden');
+
+            try {
+                const response = await fetch(`${API_URL}/scan`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email_text: window.emailContent })
+                });
+                const data = await response.json();
+                pollForResults(data.scan_id);
+            } catch (error) { showError(error); }
+        });
+
+        async function pollForResults(scanId) {
+            const interval = setInterval(async () => {
+                try {
+                    const res = await fetch(`${API_URL}/report?id=${scanId}`);
+                    if (res.status === 200) {
+                        const report = await res.json();
+                        clearInterval(interval);
+                        showResults(report);
+                    } 
+                } catch (e) { clearInterval(interval); showError(e); }
+            }, 3000); 
+        }
+
+        function showResults(data) {
+            loadingSection.classList.add('hidden');
+            resultsSection.classList.remove('hidden');
+            resultsContent.textContent = JSON.stringify(data, null, 2);
+        }
+
+        function showError(msg) {
+            loadingSection.classList.add('hidden');
+            alert("Error: " + msg);
+            uploadSection.classList.remove('hidden');
+        }
+
+        resetBtn.addEventListener('click', () => {
+            resultsSection.classList.add('hidden');
+            uploadSection.classList.remove('hidden');
+            fileNameDisplay.textContent = "";
+            scanBtn.disabled = true;
+            window.emailContent = null;
+            fileInput.value = "";
+        });
+    </script>
+</body>
+</html>
