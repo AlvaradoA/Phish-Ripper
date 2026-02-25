@@ -77,7 +77,7 @@ Navigate to the static website address provided by the Terraform output. Upload 
 
 ## Legal and Operational Disclaimers
 
-This project is designed strictly for personal use, educational purposes and portfolio demonstration. The architecture and integrated open source intelligence feeds must not be utilized for commercial applications or enterprise security operations.
+This project is designed strictly for personal use, educational purposes, and portfolio demonstration. The architecture and integrated open source intelligence feeds must not be utilized for commercial applications or enterprise security operations.
 
 * The AbuseIPDB free tier application programming interface prohibits commercial use and implementing this tool in a paid service requires a commercial licensing agreement
 * Processing raw electronic mail files introduces significant data privacy risks since these artifacts contain personally identifiable information
