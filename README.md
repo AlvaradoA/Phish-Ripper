@@ -8,12 +8,14 @@ This repository contains the infrastructure and application code for an automate
 
 The project utilizes a cloud native approach deployed via Terraform. The decoupled components ensure scalability and prevent resource bottlenecking during analysis. 
 
-
+![alt text](images/Architecture.jpg)
 
 * Amazon API Gateway handles web requests and directs traffic to the ingestion computing functions
 * Amazon Simple Storage Service provides isolated buckets for the static web interface raw email payloads and finalized intelligence reports
 * AWS Lambda executes the Python logic for data extraction and external application programming interface queries
 * AWS Secrets Manager securely retains external credentials protecting them from exposure in the application code
+
+![alt text](images/Workflow.jpg)
 
 ## Prerequisites
 
